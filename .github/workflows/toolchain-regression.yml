@@ -8,6 +8,7 @@ on:
 env:
   GITHUB_ACTION_RUN_ID: ${{ github.run_id }}
   GITHUB_ACTION_RUN_NUMBER: ${{ github.run_number }}
+  MOONC_RC_CONVENTION: borrow
 
 permissions:
   contents: read
