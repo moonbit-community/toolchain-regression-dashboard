@@ -1,0 +1,126 @@
+name: MoonBit Toolchain Regression Dashboard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 18 * * *'
+
+env:
+  GITHUB_ACTION_RUN_ID: ${{ github.run_id }}
+  GITHUB_ACTION_RUN_NUMBER: ${{ github.run_number }}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  collect-data:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - id: linux-x64
+            runner: ubuntu-latest
+          - id: macos-arm64
+            runner: macos-latest
+          - id: windows-x64
+            runner: windows-latest
+
+    runs-on: ${{ matrix.os.runner }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Setup MSVC
+        if: ${{ runner.os == 'Windows' }}
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install MoonBit nightly on Unix
+        if: ${{ runner.os != 'Windows' }}
+        shell: bash
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s nightly
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+          "$HOME/.moon/bin/moon" version --all
+          "$HOME/.moon/bin/moon" update
+
+      - name: Install MoonBit nightly on Windows
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        env:
+          MOONBIT_INSTALL_VERSION: nightly
+        run: |
+          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+          irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
+          "$env:USERPROFILE\.moon\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          & "$env:USERPROFILE\.moon\bin\moon.exe" version --all
+          & "$env:USERPROFILE\.moon\bin\moon.exe" update
+
+      - name: Collect test data
+        shell: bash
+        run: |
+          deno run -A main.ts stat \
+            --config resources/submodules.yaml \
+            --os ${{ matrix.os.id }} \
+            --out-dir data/toolchain/current/${{ matrix.os.id }} \
+            --max-concurrent-submodules 2
+
+      - name: Upload current data
+        uses: actions/upload-artifact@v4
+        with:
+          name: toolchain-current-${{ matrix.os.id }}
+          path: data/toolchain/current/${{ matrix.os.id }}/
+          if-no-files-found: error
+          retention-days: 1
+
+  publish-site:
+    needs: collect-data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Restore previous published data
+        env:
+          PAGES_BASE_URL: ${{ vars.PAGES_BASE_URL }}
+          DEFAULT_PAGES_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        run: deno run -A scripts/restore_previous.ts "${PAGES_BASE_URL:-$DEFAULT_PAGES_BASE_URL}"
+
+      - name: Organize current data
+        run: |
+          mkdir -p data/toolchain/current/linux-x64 data/toolchain/current/macos-arm64 data/toolchain/current/windows-x64
+          cp -r artifacts/toolchain-current-linux-x64/* data/toolchain/current/linux-x64/
+          cp -r artifacts/toolchain-current-macos-arm64/* data/toolchain/current/macos-arm64/
+          cp -r artifacts/toolchain-current-windows-x64/* data/toolchain/current/windows-x64/
+
+      - name: Bundle web
+        run: deno task bundle
+
+      - name: Prepare publish directory
+        run: |
+          mkdir -p publish
+          cp index.html publish/
+          cp web.js publish/
+          cp -r data publish/
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish
+          retention-days: 90
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

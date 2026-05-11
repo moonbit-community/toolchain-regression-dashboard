@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=submodules.schema.json
+schema_version: 1
+
+defaults:
+  matrix:
+    os:
+      - windows-x64
+      - macos-arm64
+      - linux-x64
+    backends:
+      - wasm
+      - wasm-gc
+      - js
+      - native
+
+  test:
+    argv:
+      - moon
+      - test
+      - --target
+      - '{backend}'
+    timeout_seconds: 1200
+
+submodules:
+  mooncakes/moonbit-community/html5-mbt: {}
+  mooncakes/moonbit-community/pdf.mbt: {}

@@ -1,0 +1,6 @@
+[submodule "mooncakes/moonbit-community/html5-mbt"]
+	path = mooncakes/moonbit-community/html5-mbt
+	url = https://github.com/moonbit-community/html5-mbt
+[submodule "mooncakes/moonbit-community/pdf.mbt"]
+	path = mooncakes/moonbit-community/pdf.mbt
+	url = https://github.com/moonbit-community/pdf.mbt

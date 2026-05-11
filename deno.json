@@ -1,0 +1,37 @@
+{
+  "tasks": {
+    "stat": "deno run -A main.ts stat",
+    "schema": "deno run -A main.ts schema",
+    "bundle": "deno bundle web.ts -o web.js",
+    "dev": "deno bundle web.ts -o web.js --watch",
+    "check": "deno check main.ts web.ts scripts/restore_previous.ts",
+    "test": "deno test -A lib",
+    "fmt": "deno fmt",
+    "lint": "deno lint"
+  },
+  "imports": {
+    "@std/cli": "jsr:@std/cli@^1.0.24",
+    "@std/json": "jsr:@std/json@^1.0.2",
+    "@std/path": "jsr:@std/path@^1.1.3",
+    "@std/streams": "jsr:@std/streams@^1.0.14",
+    "@std/yaml": "jsr:@std/yaml@^1.0.10",
+    "zod": "npm:zod@^4.1.12"
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 120,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "exclude": ["plan.md", "web.js", "mooncakes"]
+  },
+  "lint": {
+    "exclude": ["web.js"],
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.ns", "dom", "esnext"]
+  }
+}

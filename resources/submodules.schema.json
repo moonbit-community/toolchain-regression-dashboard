@@ -1,0 +1,487 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "number",
+      "const": 1
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "matrix": {
+          "type": "object",
+          "properties": {
+            "os": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "windows-x64",
+                  "macos-arm64",
+                  "linux-x64"
+                ]
+              }
+            },
+            "backends": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "wasm",
+                  "wasm-gc",
+                  "js",
+                  "native"
+                ]
+              }
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "os": {
+                    "type": "string",
+                    "enum": [
+                      "windows-x64",
+                      "macos-arm64",
+                      "linux-x64"
+                    ]
+                  },
+                  "backend": {
+                    "type": "string",
+                    "enum": [
+                      "wasm",
+                      "wasm-gc",
+                      "js",
+                      "native"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "test": {
+          "type": "object",
+          "properties": {
+            "argv": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "shell": {
+              "type": "string"
+            },
+            "timeout_seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "env": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "working_directory": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "matrix",
+        "test"
+      ],
+      "additionalProperties": false
+    },
+    "submodules": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "resource_intensive": {
+            "type": "boolean"
+          },
+          "working_directory": {
+            "type": "string"
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "matrix": {
+                  "type": "object",
+                  "properties": {
+                    "os": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "windows-x64",
+                          "macos-arm64",
+                          "linux-x64"
+                        ]
+                      }
+                    },
+                    "backends": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "wasm",
+                          "wasm-gc",
+                          "js",
+                          "native"
+                        ]
+                      }
+                    },
+                    "exclude": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "os": {
+                            "type": "string",
+                            "enum": [
+                              "windows-x64",
+                              "macos-arm64",
+                              "linux-x64"
+                            ]
+                          },
+                          "backend": {
+                            "type": "string",
+                            "enum": [
+                              "wasm",
+                              "wasm-gc",
+                              "js",
+                              "native"
+                            ]
+                          }
+                        },
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "test": {
+                  "type": "object",
+                  "properties": {
+                    "argv": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "shell": {
+                      "type": "string"
+                    },
+                    "timeout_seconds": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "env": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "working_directory": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "overrides": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "match": {
+                        "default": {},
+                        "type": "object",
+                        "properties": {
+                          "os": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "windows-x64",
+                                "macos-arm64",
+                                "linux-x64"
+                              ]
+                            }
+                          },
+                          "backends": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "enum": [
+                                "wasm",
+                                "wasm-gc",
+                                "js",
+                                "native"
+                              ]
+                            }
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "test": {
+                        "type": "object",
+                        "properties": {
+                          "argv": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "shell": {
+                            "type": "string"
+                          },
+                          "timeout_seconds": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "env": {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string"
+                            },
+                            "additionalProperties": {
+                              "type": "string"
+                            }
+                          },
+                          "working_directory": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
+                      "env": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "working_directory": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "match"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "path"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "matrix": {
+            "type": "object",
+            "properties": {
+              "os": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "windows-x64",
+                    "macos-arm64",
+                    "linux-x64"
+                  ]
+                }
+              },
+              "backends": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "wasm",
+                    "wasm-gc",
+                    "js",
+                    "native"
+                  ]
+                }
+              },
+              "exclude": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "os": {
+                      "type": "string",
+                      "enum": [
+                        "windows-x64",
+                        "macos-arm64",
+                        "linux-x64"
+                      ]
+                    },
+                    "backend": {
+                      "type": "string",
+                      "enum": [
+                        "wasm",
+                        "wasm-gc",
+                        "js",
+                        "native"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "test": {
+            "type": "object",
+            "properties": {
+              "argv": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "shell": {
+                "type": "string"
+              },
+              "timeout_seconds": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "env": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "working_directory": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          "overrides": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "match": {
+                  "default": {},
+                  "type": "object",
+                  "properties": {
+                    "os": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "windows-x64",
+                          "macos-arm64",
+                          "linux-x64"
+                        ]
+                      }
+                    },
+                    "backends": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "wasm",
+                          "wasm-gc",
+                          "js",
+                          "native"
+                        ]
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "test": {
+                  "type": "object",
+                  "properties": {
+                    "argv": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "shell": {
+                      "type": "string"
+                    },
+                    "timeout_seconds": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "env": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "working_directory": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "env": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "working_directory": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "match"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "defaults",
+    "submodules"
+  ],
+  "additionalProperties": false
+}
