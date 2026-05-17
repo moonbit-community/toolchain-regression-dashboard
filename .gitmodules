@@ -10,9 +10,6 @@
 [submodule "mooncakes/moonbit-community/sqlparser"]
 	path = mooncakes/moonbit-community/sqlparser
 	url = https://github.com/moonbit-community/sqlparser
-[submodule "mooncakes/moonbit-community/harfbuzz.mbt"]
-	path = mooncakes/moonbit-community/harfbuzz.mbt
-	url = https://github.com/moonbit-community/harfbuzz.mbt
 [submodule "mooncakes/moonbit-community/sqlite3.mbt"]
 	path = mooncakes/moonbit-community/sqlite3.mbt
 	url = https://github.com/moonbit-community/sqlite3.mbt
