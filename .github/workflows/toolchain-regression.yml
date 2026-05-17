@@ -107,6 +107,9 @@ jobs:
           cp -r artifacts/toolchain-current-macos-arm64/* data/toolchain/current/macos-arm64/
           cp -r artifacts/toolchain-current-windows-x64/* data/toolchain/current/windows-x64/
 
+      - name: Write dashboard status badge
+        run: deno task status-badge
+
       - name: Bundle web
         run: deno task bundle
 

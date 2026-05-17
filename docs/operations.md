@@ -10,6 +10,7 @@ deno task lint
 deno task check
 deno task test
 deno task schema
+deno task status-badge
 deno task bundle
 ```
 
@@ -49,8 +50,9 @@ The publish job:
 2. Restores `data/toolchain/previous` from the published site. It advances rows without regressions to the published
    `current`, while rows with regressions keep the published `previous` baseline. Rows are keyed by
    `submodule_path + module_path`.
-3. Bundles `web.ts`.
-4. Publishes `index.html`, `web.js`, and `data/` to GitHub Pages.
+3. Generates `data/toolchain/status.svg` for the README status badge.
+4. Bundles `web.ts`.
+5. Publishes `index.html`, `web.js`, and `data/` to GitHub Pages.
 
 Set the repository variable `PAGES_BASE_URL` if the default Pages URL is not correct for the repository.
 
@@ -61,7 +63,8 @@ Set the repository variable `PAGES_BASE_URL` if the default Pages URL is not cor
 - `Excluded`: the matrix entry matched an `exclude` rule.
 - `Missing`: rendered only in the frontend when one period has no record for a key.
 
-A regression is previous `Pass` to current `Error` or `Missing`.
+A regression is previous `Pass` to current `Error` or `Missing`. The README badge is green when every current dashboard
+cell is `Pass` or `Excluded`, and red when any current cell is `Error` or `Missing`.
 
 ## Troubleshooting
 

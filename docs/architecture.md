@@ -10,6 +10,8 @@ resources/submodules.yaml
   -> main.ts stat
   -> data/toolchain/current/<os>/data.jsonl
   -> data/toolchain/current/<os>/logs/*.log
+  -> scripts/write_status_badge.ts
+  -> data/toolchain/status.svg
   -> static frontend
 ```
 
@@ -24,8 +26,10 @@ There is no server-side API. The JSONL files and logs are the public data surfac
 | `lib/submodule_config.ts`                    | YAML loading, path normalization, matrix expansion, and command templates.     |
 | `lib/toolchain_stat.ts`                      | Submodule commit detection, command execution, timeout handling, result logs.  |
 | `lib/dashboard_data.ts`                      | Current/previous merge, row filtering, sorting, and regression classification. |
+| `lib/dashboard_status.ts`                    | Current dashboard status aggregation and README badge rendering.               |
 | `web.ts`                                     | Preact UI compiled to `web.js`.                                                |
 | `scripts/restore_previous.ts`                | Publish helper that restores previous data from the published Pages site.      |
+| `scripts/write_status_badge.ts`              | Publish helper that writes `data/toolchain/status.svg` for the README badge.   |
 | `.github/workflows/toolchain-regression.yml` | Scheduled collection and GitHub Pages publish.                                 |
 
 ## Collection Model
@@ -52,6 +56,9 @@ The frontend compares records by `submodule_path + module_path + os + backend`.
 A regression is reported when the previous status is `Pass` and the current status is `Error` or `Missing`. `Excluded`
 is not a regression. A newly added failing test is a failure, but not a regression because no previous `Pass` exists for
 that key.
+
+The README status badge is based only on current dashboard cells. It is passing when there is at least one current row
+and every current cell is `Pass` or `Excluded`. Any `Error` or `Missing` cell makes the badge failing.
 
 During publish, the previous baseline advances row by row using `submodule_path + module_path`. Rows with regressions
 keep their last published previous data so unresolved regressions remain visible across runs. Rows without regressions

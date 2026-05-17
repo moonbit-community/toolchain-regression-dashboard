@@ -2,9 +2,10 @@
   "tasks": {
     "stat": "deno run -A main.ts stat",
     "schema": "deno run -A main.ts schema",
+    "status-badge": "deno run -A scripts/write_status_badge.ts",
     "bundle": "deno bundle web.ts -o web.js",
     "dev": "deno bundle web.ts -o web.js --watch",
-    "check": "deno check main.ts web.ts scripts/restore_previous.ts",
+    "check": "deno check main.ts web.ts scripts/restore_previous.ts scripts/write_status_badge.ts",
     "test": "deno test -A lib",
     "fmt": "deno fmt",
     "lint": "deno lint"

@@ -1,5 +1,7 @@
 # Toolchain Regression Dashboard
 
+[![Dashboard status](https://moonbit-community.github.io/toolchain-regression-dashboard/data/toolchain/status.svg)](https://moonbit-community.github.io/toolchain-regression-dashboard/)
+
 Toolchain Regression Dashboard tracks MoonBit `moon test` results for submodules that are already checked out in this
 workspace. CI publishes the latest run under `data/toolchain/current/<os>` and restores the previously published run
 under `data/toolchain/previous/<os>` so the static frontend can mark regressions. Previous baselines are preserved per
@@ -43,6 +45,15 @@ Build the static frontend:
 deno task bundle
 ```
 
+Generate the README status badge from current data:
+
+```sh
+deno task status-badge
+```
+
+The published badge is written to `data/toolchain/status.svg`. It is green when every current dashboard cell is `Pass`
+or `Excluded`, and red when any current cell is `Error` or `Missing`.
+
 Then serve the directory with any static file server and open `index.html`.
 
 ```sh
@@ -60,6 +71,7 @@ data/toolchain/current/windows-x64/data.jsonl
 data/toolchain/previous/linux-x64/data.jsonl
 data/toolchain/previous/macos-arm64/data.jsonl
 data/toolchain/previous/windows-x64/data.jsonl
+data/toolchain/status.svg
 ```
 
 Each file is newline-delimited JSON. The first line is metadata with `generated_at`, `runId`, `runNumber`, and
@@ -73,5 +85,6 @@ deno task lint
 deno task check
 deno task test
 deno task schema
+deno task status-badge
 deno task bundle
 ```
