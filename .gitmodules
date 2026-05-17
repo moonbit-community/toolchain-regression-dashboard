@@ -4,3 +4,27 @@
 [submodule "mooncakes/moonbit-community/pdf.mbt"]
 	path = mooncakes/moonbit-community/pdf.mbt
 	url = https://github.com/moonbit-community/pdf.mbt
+[submodule "mooncakes/moonbit-community/yaml.mbt"]
+	path = mooncakes/moonbit-community/yaml.mbt
+	url = https://github.com/moonbit-community/yaml.mbt
+[submodule "mooncakes/moonbit-community/sqlparser"]
+	path = mooncakes/moonbit-community/sqlparser
+	url = https://github.com/moonbit-community/sqlparser
+[submodule "mooncakes/moonbit-community/harfbuzz.mbt"]
+	path = mooncakes/moonbit-community/harfbuzz.mbt
+	url = https://github.com/moonbit-community/harfbuzz.mbt
+[submodule "mooncakes/moonbit-community/sqlite3.mbt"]
+	path = mooncakes/moonbit-community/sqlite3.mbt
+	url = https://github.com/moonbit-community/sqlite3.mbt
+[submodule "mooncakes/moonbit-community/diago"]
+	path = mooncakes/moonbit-community/diago
+	url = https://github.com/moonbit-community/diago
+[submodule "mooncakes/moonbit-community/xml-mbt"]
+	path = mooncakes/moonbit-community/xml-mbt
+	url = https://github.com/moonbit-community/xml-mbt
+[submodule "mooncakes/moonbit-community/moonbit-jq"]
+	path = mooncakes/moonbit-community/moonbit-jq
+	url = https://github.com/moonbit-community/moonbit-jq
+[submodule "mooncakes/moonbit-community/cmark.mbt"]
+	path = mooncakes/moonbit-community/cmark.mbt
+	url = https://github.com/moonbit-community/cmark.mbt
