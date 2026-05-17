@@ -26,7 +26,7 @@ submodules:
   mooncakes/moonbit-community/pdf.mbt: {}
   mooncakes/moonbit-community/yaml.mbt: {}
   mooncakes/moonbit-community/sqlparser: {}
-  mooncakes/moonbit-community/harfbuzz.mbt: {}
+  # mooncakes/moonbit-community/harfbuzz.mbt: {}
   mooncakes/moonbit-community/sqlite3.mbt:
     matrix:
       exclude:
