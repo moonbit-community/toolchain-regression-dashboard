@@ -25,3 +25,6 @@
 [submodule "mooncakes/moonbit-community/cmark.mbt"]
 	path = mooncakes/moonbit-community/cmark.mbt
 	url = https://github.com/moonbit-community/cmark.mbt
+[submodule "mooncakes/moonbit-community/harfbuzz.mbt"]
+	path = mooncakes/moonbit-community/harfbuzz.mbt
+	url = https://github.com/moonbit-community/harfbuzz.mbt
