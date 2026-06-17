@@ -21,6 +21,16 @@ defaults:
       - '{backend}'
     timeout_seconds: 1200
 
+  overrides:
+    - match:
+        os:
+          - macos-arm64
+          - linux-x64
+        backends:
+          - native
+      env:
+        MOONBIT_NEW_NATIVE: '1'
+
 submodules:
   mooncakes/moonbit-community/html5-mbt: {}
   mooncakes/moonbit-community/pdf.mbt: {}

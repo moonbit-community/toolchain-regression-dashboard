@@ -63,6 +63,7 @@ export type ModuleConfig = z.infer<typeof ModuleConfigSchema>;
 export const DefaultsSchema = z.object({
   matrix: MatrixConfigSchema,
   test: CommandSpecSchema,
+  overrides: z.array(OverrideConfigSchema).optional(),
 }).strict();
 export type DefaultsConfig = z.infer<typeof DefaultsSchema>;
 

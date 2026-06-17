@@ -13,6 +13,12 @@ defaults:
   test:
     argv: [moon, test, --target, '{backend}']
     timeout_seconds: 1200
+  overrides:
+    - match:
+        os: [linux-x64, macos-arm64]
+        backends: [native]
+      env:
+        MOONBIT_NEW_NATIVE: '1'
 
 submodules:
   deps/parser:
@@ -88,9 +94,18 @@ If `modules` is absent, the collector emits one module with path `.` or the subm
 
 ## Overrides
 
-Overrides apply after defaults, submodule config, and module config. Multiple matching overrides apply in file order.
+Overrides may be set at defaults, submodule, or module level. Defaults overrides apply first, followed by submodule
+overrides and module overrides. Multiple matching overrides apply in file order within each level.
 
 ```yaml
+defaults:
+  overrides:
+    - match:
+        os: [linux-x64, macos-arm64]
+        backends: [native]
+      env:
+        MOONBIT_NEW_NATIVE: '1'
+
 submodules:
   deps/parser:
     overrides:

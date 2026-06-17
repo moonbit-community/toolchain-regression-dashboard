@@ -40,7 +40,7 @@ The collector expands `resources/submodules.yaml` into tasks by:
 2. Applying submodule-level matrix and test overrides.
 3. Expanding module entries when `modules` is present.
 4. Applying module-level matrix and test overrides.
-5. Applying matching ordered overrides.
+5. Applying matching ordered overrides from defaults, submodule, and module scope.
 6. Emitting one test record for each `submodule_path + module_path + os + backend`.
 
 Matrix entries matched by `exclude` emit `Excluded` records and do not execute a command.

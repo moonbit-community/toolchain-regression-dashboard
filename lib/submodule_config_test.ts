@@ -208,6 +208,83 @@ Deno.test('expandSubmodulesConfig preserves inherited test command when override
   assertEquals(task.test.timeout_seconds, 1200);
 });
 
+Deno.test('loadSubmodulesConfig applies default overrides to matching tasks', async () => {
+  const dir = await Deno.makeTempDir();
+  const path = `${dir}/submodules.yaml`;
+  await Deno.writeTextFile(
+    path,
+    `
+schema_version: 1
+defaults:
+  matrix:
+    os: [linux-x64, macos-arm64, windows-x64]
+    backends: [wasm, native]
+  test:
+    argv: [moon, test, --target, '{backend}']
+    env:
+      BASE: "1"
+  overrides:
+    - match:
+        os: [linux-x64, macos-arm64]
+        backends: [native]
+      env:
+        MOONBIT_NEW_NATIVE: "1"
+submodules:
+  deps/parser:
+    overrides:
+      - match:
+          os: [linux-x64]
+          backends: [native]
+        env:
+          PROJECT: parser
+`,
+  );
+
+  try {
+    const config = await loadSubmodulesConfig(path);
+    const linuxTasks = expandSubmodulesConfig(config, 'linux-x64');
+    const macosTasks = expandSubmodulesConfig(config, 'macos-arm64');
+    const windowsTasks = expandSubmodulesConfig(config, 'windows-x64');
+
+    assertEquals(linuxTasks.find((task) => task.backend === 'native')?.test.env, {
+      MOONBIT_NEW_NATIVE: '1',
+      PROJECT: 'parser',
+      BASE: '1',
+    });
+    assertEquals(macosTasks.find((task) => task.backend === 'native')?.test.env, {
+      MOONBIT_NEW_NATIVE: '1',
+      BASE: '1',
+    });
+    assertEquals(windowsTasks.find((task) => task.backend === 'native')?.test.env, { BASE: '1' });
+    assertEquals(linuxTasks.find((task) => task.backend === 'wasm')?.test.env, { BASE: '1' });
+  } finally {
+    await Deno.remove(dir, { recursive: true });
+  }
+});
+
+Deno.test('resources config enables new native runtime for linux and macos native tasks', async () => {
+  const configPath = new URL('../resources/submodules.yaml', import.meta.url).pathname;
+  const config = await loadSubmodulesConfig(configPath);
+  const linuxTasks = expandSubmodulesConfig(config, 'linux-x64');
+  const macosTasks = expandSubmodulesConfig(config, 'macos-arm64');
+  const windowsTasks = expandSubmodulesConfig(config, 'windows-x64');
+
+  const linuxNativeTasks = linuxTasks.filter((task) => task.backend === 'native');
+  const macosNativeTasks = macosTasks.filter((task) => task.backend === 'native');
+
+  assertEquals(linuxNativeTasks.length > 0, true);
+  assertEquals(macosNativeTasks.length > 0, true);
+  assertEquals(linuxNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'), true);
+  assertEquals(macosNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'), true);
+  assertEquals(windowsTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined), true);
+  assertEquals(
+    [...linuxTasks, ...macosTasks]
+      .filter((task) => task.backend !== 'native')
+      .every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined),
+    true,
+  );
+});
+
 Deno.test('expandSubmodulesConfig applies module matrix, exclude, env merge, and ordered overrides', () => {
   const config: SubmodulesConfig = {
     schema_version: 1,

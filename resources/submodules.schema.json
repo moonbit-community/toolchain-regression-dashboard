@@ -94,6 +94,91 @@
             }
           },
           "additionalProperties": false
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "match": {
+                "default": {},
+                "type": "object",
+                "properties": {
+                  "os": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "windows-x64",
+                        "macos-arm64",
+                        "linux-x64"
+                      ]
+                    }
+                  },
+                  "backends": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "wasm",
+                        "wasm-gc",
+                        "js",
+                        "native"
+                      ]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "test": {
+                "type": "object",
+                "properties": {
+                  "argv": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "shell": {
+                    "type": "string"
+                  },
+                  "timeout_seconds": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "env": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "working_directory": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "env": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "working_directory": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "match"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "required": [

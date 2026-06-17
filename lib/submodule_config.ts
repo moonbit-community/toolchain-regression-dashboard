@@ -182,6 +182,7 @@ export function expandSubmodulesConfig(
 ): ToolchainTask[] {
   const defaultsMatrix = normalizeMatrix(config.defaults.matrix);
   const defaultsTest = cloneCommandSpec(config.defaults.test);
+  const defaultsOverrides = config.defaults.overrides ?? [];
   const tasks: ToolchainTask[] = [];
 
   for (const [submodulePath, submoduleConfig] of Object.entries(config.submodules)) {
@@ -194,7 +195,7 @@ export function expandSubmodulesConfig(
       const modulePath = normalizeWorkspaceRelativePath(moduleConfig.path, 'module path');
       const matrix = mergeMatrix(submoduleMatrix, moduleConfig.matrix);
       const moduleTest = mergeCommandSpec(submoduleTest, moduleConfig.test);
-      const overrides = [...(submoduleConfig.overrides ?? []), ...(moduleConfig.overrides ?? [])];
+      const overrides = [...defaultsOverrides, ...(submoduleConfig.overrides ?? []), ...(moduleConfig.overrides ?? [])];
 
       for (const os of matrix.os) {
         if (targetOs !== undefined && os !== targetOs) continue;
