@@ -9,14 +9,19 @@ schema_version: 1
 defaults:
   matrix:
     os: [linux-x64, macos-arm64, windows-x64]
-    backends: [wasm, wasm-gc, js, native]
+    backends: [wasm, wasm-gc, js, native, new-native]
+    exclude:
+      - os: windows-x64
+        backend: new-native
   test:
     argv: [moon, test, --target, '{backend}']
     timeout_seconds: 1200
   overrides:
     - match:
         os: [linux-x64, macos-arm64]
-        backends: [native]
+        backends: [new-native]
+      test:
+        argv: [moon, test, --target, native]
       env:
         MOONBIT_NEW_NATIVE: '1'
 
@@ -102,7 +107,9 @@ defaults:
   overrides:
     - match:
         os: [linux-x64, macos-arm64]
-        backends: [native]
+        backends: [new-native]
+      test:
+        argv: [moon, test, --target, native]
       env:
         MOONBIT_NEW_NATIVE: '1'
 
@@ -121,6 +128,9 @@ submodules:
 
 Override `env` values are merged into the effective command environment. A `test.env` on the command can still override
 the same key.
+
+The default `new-native` backend is a reporting name for the native target run with `MOONBIT_NEW_NATIVE=1`. Its command
+override keeps the MoonBit target as `native`.
 
 ## Templates
 

@@ -4,9 +4,15 @@ export const ToolchainOSSchema = z.enum(['windows-x64', 'macos-arm64', 'linux-x6
 export type ToolchainOS = z.infer<typeof ToolchainOSSchema>;
 export const toolchainOses = ['windows-x64', 'macos-arm64', 'linux-x64'] as const satisfies readonly ToolchainOS[];
 
-export const ToolchainBackendSchema = z.enum(['wasm', 'wasm-gc', 'js', 'native']);
+export const ToolchainBackendSchema = z.enum(['wasm', 'wasm-gc', 'js', 'native', 'new-native']);
 export type ToolchainBackend = z.infer<typeof ToolchainBackendSchema>;
-export const toolchainBackends = ['wasm', 'wasm-gc', 'js', 'native'] as const satisfies readonly ToolchainBackend[];
+export const toolchainBackends = [
+  'wasm',
+  'wasm-gc',
+  'js',
+  'native',
+  'new-native',
+] as const satisfies readonly ToolchainBackend[];
 
 export const ToolchainStatusSchema = z.enum(['Pass', 'Error', 'Excluded']);
 export type ToolchainStatus = z.infer<typeof ToolchainStatusSchema>;

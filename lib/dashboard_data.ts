@@ -7,7 +7,13 @@ import type {
 } from './toolchain_types.ts';
 
 export const DASHBOARD_OSES = ['linux-x64', 'macos-arm64', 'windows-x64'] as const satisfies readonly ToolchainOS[];
-export const DASHBOARD_BACKENDS = ['wasm', 'wasm-gc', 'js', 'native'] as const satisfies readonly ToolchainBackend[];
+export const DASHBOARD_BACKENDS = [
+  'wasm',
+  'wasm-gc',
+  'js',
+  'native',
+  'new-native',
+] as const satisfies readonly ToolchainBackend[];
 
 export type Filter = 'all' | 'error' | 'excluded' | 'pass' | 'regression';
 export type CellStatus = 'pass' | 'error' | 'excluded' | 'missing';

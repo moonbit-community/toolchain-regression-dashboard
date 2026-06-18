@@ -31,7 +31,8 @@
                   "wasm",
                   "wasm-gc",
                   "js",
-                  "native"
+                  "native",
+                  "new-native"
                 ]
               }
             },
@@ -54,7 +55,8 @@
                       "wasm",
                       "wasm-gc",
                       "js",
-                      "native"
+                      "native",
+                      "new-native"
                     ]
                   }
                 },
@@ -123,7 +125,8 @@
                         "wasm",
                         "wasm-gc",
                         "js",
-                        "native"
+                        "native",
+                        "new-native"
                       ]
                     }
                   }
@@ -231,7 +234,8 @@
                           "wasm",
                           "wasm-gc",
                           "js",
-                          "native"
+                          "native",
+                          "new-native"
                         ]
                       }
                     },
@@ -254,7 +258,8 @@
                               "wasm",
                               "wasm-gc",
                               "js",
-                              "native"
+                              "native",
+                              "new-native"
                             ]
                           }
                         },
@@ -323,7 +328,8 @@
                                 "wasm",
                                 "wasm-gc",
                                 "js",
-                                "native"
+                                "native",
+                                "new-native"
                               ]
                             }
                           }
@@ -409,7 +415,8 @@
                     "wasm",
                     "wasm-gc",
                     "js",
-                    "native"
+                    "native",
+                    "new-native"
                   ]
                 }
               },
@@ -432,7 +439,8 @@
                         "wasm",
                         "wasm-gc",
                         "js",
-                        "native"
+                        "native",
+                        "new-native"
                       ]
                     }
                   },
@@ -501,7 +509,8 @@
                           "wasm",
                           "wasm-gc",
                           "js",
-                          "native"
+                          "native",
+                          "new-native"
                         ]
                       }
                     }

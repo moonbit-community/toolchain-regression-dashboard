@@ -262,24 +262,50 @@ submodules:
   }
 });
 
-Deno.test('resources config enables new native runtime for linux and macos native tasks', async () => {
+Deno.test('resources config runs both native modes on linux and macos', async () => {
   const configPath = new URL('../resources/submodules.yaml', import.meta.url).pathname;
   const config = await loadSubmodulesConfig(configPath);
   const linuxTasks = expandSubmodulesConfig(config, 'linux-x64');
   const macosTasks = expandSubmodulesConfig(config, 'macos-arm64');
   const windowsTasks = expandSubmodulesConfig(config, 'windows-x64');
+  const windowsTasksWithExcluded = expandSubmodulesConfig(config, 'windows-x64', { includeExcluded: true });
 
   const linuxNativeTasks = linuxTasks.filter((task) => task.backend === 'native');
   const macosNativeTasks = macosTasks.filter((task) => task.backend === 'native');
+  const linuxNewNativeTasks = linuxTasks.filter((task) => String(task.backend) === 'new-native');
+  const macosNewNativeTasks = macosTasks.filter((task) => String(task.backend) === 'new-native');
 
   assertEquals(linuxNativeTasks.length > 0, true);
   assertEquals(macosNativeTasks.length > 0, true);
-  assertEquals(linuxNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'), true);
-  assertEquals(macosNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'), true);
+  assertEquals(linuxNewNativeTasks.length, linuxNativeTasks.length);
+  assertEquals(macosNewNativeTasks.length, macosNativeTasks.length);
+  assertEquals(linuxNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined), true);
+  assertEquals(macosNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined), true);
+  assertEquals(linuxNewNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'), true);
+  assertEquals(macosNewNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'), true);
+  assertEquals(
+    [...linuxNewNativeTasks, ...macosNewNativeTasks].every((task) =>
+      JSON.stringify(expandCommand(task.test, {
+        backend: task.backend,
+        os: task.os,
+        submodule: task.submodule_path,
+        module: task.module_path,
+        working_directory: task.test.working_directory,
+      })) === JSON.stringify(['moon', 'test', '--target', 'native'])
+    ),
+    true,
+  );
   assertEquals(windowsTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined), true);
+  assertEquals(windowsTasks.every((task) => String(task.backend) !== 'new-native'), true);
+  assertEquals(
+    windowsTasksWithExcluded
+      .filter((task) => String(task.backend) === 'new-native')
+      .every((task) => task.excluded === true),
+    true,
+  );
   assertEquals(
     [...linuxTasks, ...macosTasks]
-      .filter((task) => task.backend !== 'native')
+      .filter((task) => task.backend !== 'native' && String(task.backend) !== 'new-native')
       .every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined),
     true,
   );
