@@ -1,7 +1,5 @@
-import { JsonParseStream } from '@std/json/parse-stream';
-import { TextLineStream } from '@std/streams/text-line-stream';
-import { html, render } from 'npm:htm@3.1.1/preact';
-import { useEffect, useMemo, useState } from 'npm:preact@10.27.2/hooks';
+import { html, render } from 'htm/preact';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import {
   buildRows,
   cellKey,
@@ -45,22 +43,14 @@ async function readJsonl(
     return { metadata: null, results: [] };
   }
 
-  const reader = response.body
-    .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new TextLineStream())
-    .pipeThrough(new JsonParseStream())
-    .getReader();
-  const first = await reader.read();
-  const metadata = first.done ? null : first.value as unknown as ToolchainMetadata;
-  const results: ToolchainResultRecord[] = [];
-
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    results.push(value as unknown as ToolchainResultRecord);
-  }
-
-  return { metadata, results };
+  const values = (await response.text())
+    .split(/\r?\n/)
+    .filter((line) => line.trim())
+    .map((line) => JSON.parse(line));
+  return {
+    metadata: (values[0] as ToolchainMetadata | undefined) ?? null,
+    results: values.slice(1) as ToolchainResultRecord[],
+  };
 }
 
 function pad2(value: number): string {
@@ -73,9 +63,9 @@ function formatGeneratedAt(value: string): string {
     return value.length >= 16 ? value.slice(0, 16).replace('T', ' ') : value;
   }
 
-  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${
-    pad2(date.getMinutes())
-  }`;
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(
+    date.getMinutes(),
+  )}`;
 }
 
 function formatToolchainVersion(version: string[] | undefined): string {
@@ -108,15 +98,8 @@ function osSummary(row: RowData, os: (typeof DASHBOARD_OSES)[number]): { status:
     if (cell?.regression) regressions += 1;
   }
 
-  const status = error > 0
-    ? 'error'
-    : missing > 0
-    ? 'missing'
-    : pass > 0
-    ? 'pass'
-    : excluded > 0
-    ? 'excluded'
-    : 'missing';
+  const status =
+    error > 0 ? 'error' : missing > 0 ? 'missing' : pass > 0 ? 'pass' : excluded > 0 ? 'excluded' : 'missing';
   const regressionLabel = regressions ? ` ${regressions}R` : '';
   const excludedLabel = excluded ? ` ${excluded}EX` : '';
   return {
@@ -173,7 +156,14 @@ async function openLogs(record: ToolchainResultRecord | undefined, label: string
   if (tab) setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function StatusCell({ status, label, title, record, period, regression }: {
+function StatusCell({
+  status,
+  label,
+  title,
+  record,
+  period,
+  regression,
+}: {
   status: CellStatus;
   label: string;
   title: string;
@@ -189,11 +179,9 @@ function StatusCell({ status, label, title, record, period, regression }: {
     <td
       title="${title}"
       onClick="${onClick}"
-      style="border: ${border}; padding: 5px 6px; text-align: center; background: ${STATUS_COLORS[
-        status
-      ]}; color: ${STATUS_TEXT_COLORS[
-        status
-      ]}; font-size: 11px; font-weight: 700; cursor: ${cursor}; white-space: nowrap;"
+      style="border: ${border}; padding: 5px 6px; text-align: center; background: ${STATUS_COLORS[status]}; color: ${
+        STATUS_TEXT_COLORS[status]
+      }; font-size: 11px; font-weight: 700; cursor: ${cursor}; white-space: nowrap;"
     >
       ${label}
     </td>
@@ -255,7 +243,7 @@ function ExpandedRows({ row }: { row: RowData }) {
                   <td style="padding: 6px; border: 1px solid #cbd5e1; color: #334155;">${reason}</td>
                 </tr>
               `;
-            })
+            }),
           )}
         </tbody>
       </table>
@@ -301,19 +289,18 @@ function App() {
   const rows = useMemo(() => buildRows(data), [data]);
   const filteredRows = useMemo(() => filterRows(rows, filter, search), [rows, filter, search]);
   const counts = useMemo(() => countRows(rows), [rows]);
-  const generatedAtRaw = DASHBOARD_OSES.map((os) => data.current[os].metadata?.generated_at).filter((
-    value,
-  ): value is string => Boolean(value)).sort().at(-1);
+  const generatedAtRaw = DASHBOARD_OSES.map((os) => data.current[os].metadata?.generated_at)
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .at(-1);
   const generatedAt = generatedAtRaw ? formatGeneratedAt(generatedAtRaw) : '-';
-  const toolchainVersion = DASHBOARD_OSES.map((os) => data.current[os].metadata?.toolchainVersion).find((
-    version,
-  ): version is string[] => Array.isArray(version) && version.length > 0);
+  const toolchainVersion = DASHBOARD_OSES.map((os) => data.current[os].metadata?.toolchainVersion).find(
+    (version): version is string[] => Array.isArray(version) && version.length > 0,
+  );
   const toolchain = formatToolchainVersion(toolchainVersion);
 
   if (loading) {
-    return html`
-      <div style="padding: 20px; font-family: ui-sans-serif, system-ui;">Loading...</div>
-    `;
+    return html` <div style="padding: 20px; font-family: ui-sans-serif, system-ui;">Loading...</div> `;
   }
 
   return html`
@@ -326,28 +313,28 @@ function App() {
       </div>
 
       <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; align-items: stretch;">
-        ${([
-          ['regression', 'Regressions', counts.regression],
-          ['error', 'Errors', counts.error],
-          ['excluded', 'Excluded', counts.excluded],
-          ['pass', 'Passing', counts.pass],
-          ['all', 'Total', counts.all],
-        ] as const).map(([key, label, value]) =>
-          html`
+        ${(
+          [
+            ['regression', 'Regressions', counts.regression],
+            ['error', 'Errors', counts.error],
+            ['excluded', 'Excluded', counts.excluded],
+            ['pass', 'Passing', counts.pass],
+            ['all', 'Total', counts.all],
+          ] as const
+        ).map(
+          ([key, label, value]) => html`
             <button
               onClick="${() => setFilter(key)}"
-              style="min-width: 112px; border: 1px solid ${filter === key
-                ? '#0f172a'
-                : '#cbd5e1'}; border-radius: 6px; background: ${filter === key
-                ? '#0f172a'
-                : '#ffffff'}; color: ${filter === key
-                ? '#ffffff'
-                : '#0f172a'}; padding: 8px 10px; cursor: pointer; text-align: left;"
+              style="min-width: 112px; border: 1px solid ${
+                filter === key ? '#0f172a' : '#cbd5e1'
+              }; border-radius: 6px; background: ${filter === key ? '#0f172a' : '#ffffff'}; color: ${
+                filter === key ? '#ffffff' : '#0f172a'
+              }; padding: 8px 10px; cursor: pointer; text-align: left;"
             >
               <div style="font-size: 11px; font-weight: 700;">${label}</div>
               <div style="font-size: 20px; font-weight: 800; line-height: 1.1;">${value}</div>
             </button>
-          `
+          `,
         )}
 
         <div
@@ -358,7 +345,8 @@ function App() {
             <strong>Toolchain</strong>
             <pre
               style="margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace; font-size: 11px; line-height: 1.35;"
-            >${toolchain}</pre>
+            >
+${toolchain}</pre>
           </div>
         </div>
       </div>
@@ -382,11 +370,7 @@ function App() {
           <tr style="background: #1e293b; color: white;">
             <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left; width: 260px;">Submodule</th>
             <th style="padding: 8px; border: 1px solid #cbd5e1; text-align: left; width: 160px;">Module</th>
-            ${DASHBOARD_OSES.map((os) =>
-              html`
-                <th style="padding: 8px; border: 1px solid #cbd5e1;">${os}</th>
-              `
-            )}
+            ${DASHBOARD_OSES.map((os) => html` <th style="padding: 8px; border: 1px solid #cbd5e1;">${os}</th> `)}
             <th style="padding: 8px; border: 1px solid #cbd5e1; width: 82px;">Reg.</th>
             <th style="padding: 8px; border: 1px solid #cbd5e1; width: 82px;">Overall</th>
             <th style="padding: 8px; border: 1px solid #cbd5e1; width: 84px;">Details</th>
@@ -406,22 +390,12 @@ function App() {
                 <td style="padding: 7px; border: 1px solid #cbd5e1; font-family: monospace;">${row.module_path}</td>
                 ${DASHBOARD_OSES.map((os) => {
                   const summary = osSummary(row, os);
-                  return html`
-                    <${StatusCell}
-                      status="${summary.status}"
-                      label="${summary.label}"
-                      title="${os}"
-                    />
-                  `;
+                  return html` <${StatusCell} status="${summary.status}" label="${summary.label}" title="${os}" /> `;
                 })}
                 <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center; font-weight: 800;">
                   ${row.regressionCount || ''}
                 </td>
-                <${StatusCell}
-                  status="${row.status}"
-                  label="${STATUS_LABELS[row.status]}"
-                  title="overall"
-                />
+                <${StatusCell} status="${row.status}" label="${STATUS_LABELS[row.status]}" title="overall" />
                 <td style="padding: 7px; border: 1px solid #cbd5e1; text-align: center;">
                   <button
                     onClick="${() => setExpanded((prev) => ({ ...prev, [row.key]: !prev[row.key] }))}"
@@ -431,15 +405,17 @@ function App() {
                   </button>
                 </td>
               </tr>
-              ${isExpanded
-                ? html`
-                  <tr>
-                    <td colspan="8" style="padding: 0; border: 1px solid #cbd5e1; border-top: 0;">
-                      <${ExpandedRows} row="${row}" />
-                    </td>
-                  </tr>
-                `
-                : ''}
+              ${
+                isExpanded
+                  ? html`
+                      <tr>
+                        <td colspan="8" style="padding: 0; border: 1px solid #cbd5e1; border-top: 0;">
+                          <${ExpandedRows} row="${row}" />
+                        </td>
+                      </tr>
+                    `
+                  : ''
+              }
             `;
           })}
         </tbody>
@@ -448,9 +424,4 @@ function App() {
   `;
 }
 
-render(
-  html`
-    <${App} />
-  `,
-  document.body,
-);
+render(html` <${App} /> `, document.body);

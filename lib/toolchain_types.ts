@@ -17,77 +17,97 @@ export const toolchainBackends = [
 export const ToolchainStatusSchema = z.enum(['Pass', 'Error', 'Excluded']);
 export type ToolchainStatus = z.infer<typeof ToolchainStatusSchema>;
 
-export const MatrixExcludeSchema = z.object({
-  os: ToolchainOSSchema.optional(),
-  backend: ToolchainBackendSchema.optional(),
-}).strict();
+export const MatrixExcludeSchema = z
+  .object({
+    os: ToolchainOSSchema.optional(),
+    backend: ToolchainBackendSchema.optional(),
+  })
+  .strict();
 export type MatrixExclude = z.infer<typeof MatrixExcludeSchema>;
 
-export const MatrixConfigSchema = z.object({
-  os: z.array(ToolchainOSSchema).optional(),
-  backends: z.array(ToolchainBackendSchema).optional(),
-  exclude: z.array(MatrixExcludeSchema).optional(),
-}).strict();
-export type MatrixConfig = z.infer<typeof MatrixConfigSchema>;
-
-export const CommandSpecSchema = z.object({
-  argv: z.array(z.string()).optional(),
-  shell: z.string().optional(),
-  timeout_seconds: z.number().positive().optional(),
-  env: z.record(z.string(), z.string()).optional(),
-  working_directory: z.string().optional(),
-}).strict().superRefine((value, ctx) => {
-  const forms = [value.argv !== undefined, value.shell !== undefined].filter(Boolean).length;
-  if (forms > 1) {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'CommandSpec must not set both argv and shell.',
-    });
-  }
-});
-export type CommandSpec = z.infer<typeof CommandSpecSchema>;
-
-export const OverrideConfigSchema = z.object({
-  match: z.object({
+export const MatrixConfigSchema = z
+  .object({
     os: z.array(ToolchainOSSchema).optional(),
     backends: z.array(ToolchainBackendSchema).optional(),
-  }).strict().default({}),
-  test: CommandSpecSchema.optional(),
-  env: z.record(z.string(), z.string()).optional(),
-  working_directory: z.string().optional(),
-}).strict();
+    exclude: z.array(MatrixExcludeSchema).optional(),
+  })
+  .strict();
+export type MatrixConfig = z.infer<typeof MatrixConfigSchema>;
+
+export const CommandSpecSchema = z
+  .object({
+    argv: z.array(z.string()).optional(),
+    shell: z.string().optional(),
+    timeout_seconds: z.number().positive().optional(),
+    env: z.record(z.string(), z.string()).optional(),
+    working_directory: z.string().optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    const forms = [value.argv !== undefined, value.shell !== undefined].filter(Boolean).length;
+    if (forms > 1) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'CommandSpec must not set both argv and shell.',
+      });
+    }
+  });
+export type CommandSpec = z.infer<typeof CommandSpecSchema>;
+
+export const OverrideConfigSchema = z
+  .object({
+    match: z
+      .object({
+        os: z.array(ToolchainOSSchema).optional(),
+        backends: z.array(ToolchainBackendSchema).optional(),
+      })
+      .strict()
+      .default({}),
+    test: CommandSpecSchema.optional(),
+    env: z.record(z.string(), z.string()).optional(),
+    working_directory: z.string().optional(),
+  })
+  .strict();
 export type OverrideConfig = z.infer<typeof OverrideConfigSchema>;
 
-export const ModuleConfigSchema = z.object({
-  path: z.string(),
-  matrix: MatrixConfigSchema.optional(),
-  test: CommandSpecSchema.optional(),
-  overrides: z.array(OverrideConfigSchema).optional(),
-}).strict();
+export const ModuleConfigSchema = z
+  .object({
+    path: z.string(),
+    matrix: MatrixConfigSchema.optional(),
+    test: CommandSpecSchema.optional(),
+    overrides: z.array(OverrideConfigSchema).optional(),
+  })
+  .strict();
 export type ModuleConfig = z.infer<typeof ModuleConfigSchema>;
 
-export const DefaultsSchema = z.object({
-  matrix: MatrixConfigSchema,
-  test: CommandSpecSchema,
-  overrides: z.array(OverrideConfigSchema).optional(),
-}).strict();
+export const DefaultsSchema = z
+  .object({
+    matrix: MatrixConfigSchema,
+    test: CommandSpecSchema,
+    overrides: z.array(OverrideConfigSchema).optional(),
+  })
+  .strict();
 export type DefaultsConfig = z.infer<typeof DefaultsSchema>;
 
-export const SubmoduleConfigSchema = z.object({
-  resource_intensive: z.boolean().optional(),
-  working_directory: z.string().optional(),
-  modules: z.array(ModuleConfigSchema).optional(),
-  matrix: MatrixConfigSchema.optional(),
-  test: CommandSpecSchema.optional(),
-  overrides: z.array(OverrideConfigSchema).optional(),
-}).strict();
+export const SubmoduleConfigSchema = z
+  .object({
+    resource_intensive: z.boolean().optional(),
+    working_directory: z.string().optional(),
+    modules: z.array(ModuleConfigSchema).optional(),
+    matrix: MatrixConfigSchema.optional(),
+    test: CommandSpecSchema.optional(),
+    overrides: z.array(OverrideConfigSchema).optional(),
+  })
+  .strict();
 export type SubmoduleConfig = z.infer<typeof SubmoduleConfigSchema>;
 
-export const SubmodulesConfigSchema = z.object({
-  schema_version: z.literal(1),
-  defaults: DefaultsSchema,
-  submodules: z.record(z.string(), SubmoduleConfigSchema),
-}).strict();
+export const SubmodulesConfigSchema = z
+  .object({
+    schema_version: z.literal(1),
+    defaults: DefaultsSchema,
+    submodules: z.record(z.string(), SubmoduleConfigSchema),
+  })
+  .strict();
 export type SubmodulesConfig = z.infer<typeof SubmodulesConfigSchema>;
 
 export type ExpandedCommand = string[] | string;

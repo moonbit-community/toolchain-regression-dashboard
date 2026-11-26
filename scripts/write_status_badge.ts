@@ -1,6 +1,7 @@
-import { parseArgs } from '@std/cli/parse-args';
-import { dirname } from '@std/path/dirname';
-import { join } from '@std/path/join';
+import { mkdir, writeFile, readFile } from 'node:fs/promises';
+import { parseArgs } from 'node:util';
+import { dirname } from 'node:path';
+import { join } from 'node:path';
 import { DASHBOARD_OSES, emptyDashboardData } from '../lib/dashboard_data.ts';
 import { renderDashboardStatusSvg, summarizeDashboardStatus } from '../lib/dashboard_status.ts';
 import type { ToolchainMetadata, ToolchainOS, ToolchainResultRecord } from '../lib/toolchain_types.ts';
@@ -10,7 +11,7 @@ function showHelp() {
 Write dashboard status badge
 
 USAGE:
-    deno run -A scripts/write_status_badge.ts [OPTIONS]
+    npm run status-badge -- [OPTIONS]
 
 OPTIONS:
     --data-dir <PATH>    Toolchain data directory [default: data/toolchain]
@@ -26,9 +27,9 @@ async function readCurrentJsonl(
   const path = join(dataDir, 'current', os, 'data.jsonl');
   let text: string;
   try {
-    text = await Deno.readTextFile(path);
+    text = await readFile(path, 'utf8');
   } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       return { metadata: null, results: [] };
     }
     throw error;
@@ -45,11 +46,14 @@ async function readCurrentJsonl(
   };
 }
 
-export async function main(args = Deno.args): Promise<void> {
-  const parsed = parseArgs(args, {
-    string: ['data-dir', 'out'],
-    boolean: ['help'],
-    alias: { h: 'help' },
+export async function main(args = process.argv.slice(2)): Promise<void> {
+  const { values: parsed } = parseArgs({
+    args,
+    options: {
+      'data-dir': { type: 'string' },
+      out: { type: 'string' },
+      help: { type: 'boolean', short: 'h' },
+    },
   });
 
   if (parsed.help) {
@@ -66,8 +70,8 @@ export async function main(args = Deno.args): Promise<void> {
   }
 
   const summary = summarizeDashboardStatus(data);
-  await Deno.mkdir(dirname(outPath), { recursive: true });
-  await Deno.writeTextFile(outPath, renderDashboardStatusSvg(summary));
+  await mkdir(dirname(outPath), { recursive: true });
+  await writeFile(outPath, renderDashboardStatusSvg(summary));
   console.log(
     `Wrote ${summary.status} dashboard badge to ${outPath} ` +
       `(${summary.passCount} pass, ${summary.errorCount} error, ${summary.missingCount} missing, ${summary.excludedCount} excluded).`,

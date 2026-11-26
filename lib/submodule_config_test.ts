@@ -1,3 +1,8 @@
+import { fileURLToPath } from 'node:url';
+import { test } from 'node:test';
+import { writeFile, rm, mkdtemp } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import {
   expandCommand,
   expandSubmodulesConfig,
@@ -25,22 +30,22 @@ function assertThrows(fn: () => unknown, pattern: RegExp) {
   throw new Error(`Expected error matching ${pattern}`);
 }
 
-Deno.test('normalizeWorkspaceRelativePath normalizes relative submodule paths', () => {
+test('normalizeWorkspaceRelativePath normalizes relative submodule paths', () => {
   assertEquals(normalizeWorkspaceRelativePath(' ./deps\\parser// '), 'deps/parser');
   assertEquals(normalizeWorkspaceRelativePath('src/./module'), 'src/module');
   assertEquals(normalizeWorkspaceRelativePath(''), '.');
 });
 
-Deno.test('normalizeWorkspaceRelativePath rejects URLs, absolute paths, and parent traversal', () => {
+test('normalizeWorkspaceRelativePath rejects URLs, absolute paths, and parent traversal', () => {
   assertThrows(() => normalizeWorkspaceRelativePath('https://github.com/example/project'), /workspace-relative/);
   assertThrows(() => normalizeWorkspaceRelativePath('/tmp/project'), /workspace-relative/);
   assertThrows(() => normalizeWorkspaceRelativePath('../project'), /must not contain/);
 });
 
-Deno.test('loadSubmodulesConfig rejects duplicate paths after normalization', async () => {
-  const dir = await Deno.makeTempDir();
+test('loadSubmodulesConfig rejects duplicate paths after normalization', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'toolchain-dashboard-'));
   const path = `${dir}/submodules.yaml`;
-  await Deno.writeTextFile(
+  await writeFile(
     path,
     `
 schema_version: 1
@@ -65,14 +70,14 @@ submodules:
     const message = error instanceof Error ? error.message : String(error);
     if (!/Duplicate submodule path/.test(message)) throw error;
   } finally {
-    await Deno.remove(dir, { recursive: true });
+    await rm(dir, { recursive: true });
   }
 });
 
-Deno.test('loadSubmodulesConfig rejects URL submodule keys', async () => {
-  const dir = await Deno.makeTempDir();
+test('loadSubmodulesConfig rejects URL submodule keys', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'toolchain-dashboard-'));
   const path = `${dir}/submodules.yaml`;
-  await Deno.writeTextFile(
+  await writeFile(
     path,
     `
 schema_version: 1
@@ -95,11 +100,11 @@ submodules:
     const message = error instanceof Error ? error.message : String(error);
     if (!/workspace-relative/.test(message)) throw error;
   } finally {
-    await Deno.remove(dir, { recursive: true });
+    await rm(dir, { recursive: true });
   }
 });
 
-Deno.test('SubmodulesConfigSchema rejects old repo, branch, check, and run_after fields', () => {
+test('SubmodulesConfigSchema rejects old repo, branch, check, and run_after fields', () => {
   assertEquals(
     SubmodulesConfigSchema.safeParse({
       schema_version: 1,
@@ -127,7 +132,7 @@ Deno.test('SubmodulesConfigSchema rejects old repo, branch, check, and run_after
   );
 });
 
-Deno.test('SubmodulesConfigSchema rejects skip test commands', () => {
+test('SubmodulesConfigSchema rejects skip test commands', () => {
   assertEquals(
     SubmodulesConfigSchema.safeParse({
       schema_version: 1,
@@ -143,7 +148,7 @@ Deno.test('SubmodulesConfigSchema rejects skip test commands', () => {
   );
 });
 
-Deno.test('expandSubmodulesConfig propagates resource_intensive flag to tasks', () => {
+test('expandSubmodulesConfig propagates resource_intensive flag to tasks', () => {
   const config: SubmodulesConfig = {
     schema_version: 1,
     defaults: {
@@ -158,10 +163,7 @@ Deno.test('expandSubmodulesConfig propagates resource_intensive flag to tasks', 
     submodules: {
       'deps/heavy': {
         resource_intensive: true,
-        modules: [
-          { path: '.' },
-          { path: 'examples/foo' },
-        ],
+        modules: [{ path: '.' }, { path: 'examples/foo' }],
       },
       'deps/light': {},
       'deps/explicit-light': {
@@ -175,11 +177,17 @@ Deno.test('expandSubmodulesConfig propagates resource_intensive flag to tasks', 
   const lightTasks = tasks.filter((task) => task.submodule_path !== 'deps/heavy');
 
   assertEquals(heavyTasks.length, 4);
-  assertEquals(heavyTasks.every((task) => task.resource_intensive === true), true);
-  assertEquals(lightTasks.every((task) => task.resource_intensive === false), true);
+  assertEquals(
+    heavyTasks.every((task) => task.resource_intensive === true),
+    true,
+  );
+  assertEquals(
+    lightTasks.every((task) => task.resource_intensive === false),
+    true,
+  );
 });
 
-Deno.test('expandSubmodulesConfig preserves inherited test command when override only sets env', () => {
+test('expandSubmodulesConfig preserves inherited test command when override only sets env', () => {
   const config: SubmodulesConfig = {
     schema_version: 1,
     defaults: {
@@ -208,10 +216,10 @@ Deno.test('expandSubmodulesConfig preserves inherited test command when override
   assertEquals(task.test.timeout_seconds, 1200);
 });
 
-Deno.test('loadSubmodulesConfig applies default overrides to matching tasks', async () => {
-  const dir = await Deno.makeTempDir();
+test('loadSubmodulesConfig applies default overrides to matching tasks', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'toolchain-dashboard-'));
   const path = `${dir}/submodules.yaml`;
-  await Deno.writeTextFile(
+  await writeFile(
     path,
     `
 schema_version: 1
@@ -258,12 +266,12 @@ submodules:
     assertEquals(windowsTasks.find((task) => task.backend === 'native')?.test.env, { BASE: '1' });
     assertEquals(linuxTasks.find((task) => task.backend === 'wasm')?.test.env, { BASE: '1' });
   } finally {
-    await Deno.remove(dir, { recursive: true });
+    await rm(dir, { recursive: true });
   }
 });
 
-Deno.test('resources config runs both native modes on linux and macos', async () => {
-  const configPath = new URL('../resources/submodules.yaml', import.meta.url).pathname;
+test('resources config runs both native modes on linux and macos', async () => {
+  const configPath = fileURLToPath(new URL('../resources/submodules.yaml', import.meta.url));
   const config = await loadSubmodulesConfig(configPath);
   const linuxTasks = expandSubmodulesConfig(config, 'linux-x64');
   const macosTasks = expandSubmodulesConfig(config, 'macos-arm64');
@@ -279,24 +287,45 @@ Deno.test('resources config runs both native modes on linux and macos', async ()
   assertEquals(macosNativeTasks.length > 0, true);
   assertEquals(linuxNewNativeTasks.length, linuxNativeTasks.length);
   assertEquals(macosNewNativeTasks.length, macosNativeTasks.length);
-  assertEquals(linuxNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined), true);
-  assertEquals(macosNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined), true);
-  assertEquals(linuxNewNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'), true);
-  assertEquals(macosNewNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'), true);
   assertEquals(
-    [...linuxNewNativeTasks, ...macosNewNativeTasks].every((task) =>
-      JSON.stringify(expandCommand(task.test, {
-        backend: task.backend,
-        os: task.os,
-        submodule: task.submodule_path,
-        module: task.module_path,
-        working_directory: task.test.working_directory,
-      })) === JSON.stringify(['moon', 'test', '--target', 'native'])
+    linuxNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined),
+    true,
+  );
+  assertEquals(
+    macosNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined),
+    true,
+  );
+  assertEquals(
+    linuxNewNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'),
+    true,
+  );
+  assertEquals(
+    macosNewNativeTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === '1'),
+    true,
+  );
+  assertEquals(
+    [...linuxNewNativeTasks, ...macosNewNativeTasks].every(
+      (task) =>
+        JSON.stringify(
+          expandCommand(task.test, {
+            backend: task.backend,
+            os: task.os,
+            submodule: task.submodule_path,
+            module: task.module_path,
+            working_directory: task.test.working_directory,
+          }),
+        ) === JSON.stringify(['moon', 'test', '--target', 'native']),
     ),
     true,
   );
-  assertEquals(windowsTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined), true);
-  assertEquals(windowsTasks.every((task) => String(task.backend) !== 'new-native'), true);
+  assertEquals(
+    windowsTasks.every((task) => task.test.env.MOONBIT_NEW_NATIVE === undefined),
+    true,
+  );
+  assertEquals(
+    windowsTasks.every((task) => String(task.backend) !== 'new-native'),
+    true,
+  );
   assertEquals(
     windowsTasksWithExcluded
       .filter((task) => String(task.backend) === 'new-native')
@@ -311,7 +340,7 @@ Deno.test('resources config runs both native modes on linux and macos', async ()
   );
 });
 
-Deno.test('expandSubmodulesConfig applies module matrix, exclude, env merge, and ordered overrides', () => {
+test('expandSubmodulesConfig applies module matrix, exclude, env merge, and ordered overrides', () => {
   const config: SubmodulesConfig = {
     schema_version: 1,
     defaults: {
@@ -356,26 +385,21 @@ Deno.test('expandSubmodulesConfig applies module matrix, exclude, env merge, and
   };
 
   const tasks = expandSubmodulesConfig(config, 'linux-x64');
-  assertEquals(tasks.map((task) => `${task.module_path}:${task.backend}`), [
-    '.:wasm',
-    '.:native',
-    'examples/foo:wasm',
-  ]);
+  assertEquals(
+    tasks.map((task) => `${task.module_path}:${task.backend}`),
+    ['.:wasm', '.:native', 'examples/foo:wasm'],
+  );
 
   const windowsTasks = expandSubmodulesConfig(config, 'windows-x64');
-  assertEquals(windowsTasks.map((task) => `${task.module_path}:${task.backend}`), [
-    '.:wasm',
-    'examples/foo:wasm',
-  ]);
+  assertEquals(
+    windowsTasks.map((task) => `${task.module_path}:${task.backend}`),
+    ['.:wasm', 'examples/foo:wasm'],
+  );
 
   const windowsTasksWithExcluded = expandSubmodulesConfig(config, 'windows-x64', { includeExcluded: true });
   assertEquals(
     windowsTasksWithExcluded.map((task) => `${task.module_path}:${task.backend}:${task.excluded === true}`),
-    [
-      '.:wasm:false',
-      '.:native:true',
-      'examples/foo:wasm:false',
-    ],
+    ['.:wasm:false', '.:native:true', 'examples/foo:wasm:false'],
   );
 
   const native = tasks.find((task) => task.backend === 'native')!;

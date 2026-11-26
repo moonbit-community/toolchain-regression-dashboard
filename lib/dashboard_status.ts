@@ -80,12 +80,11 @@ export function renderDashboardStatusSvg(summary: DashboardStatusSummary): strin
   const messageWidth = badgeTextWidth(summary.message);
   const width = labelWidth + messageWidth;
   const title = `${summary.label}: ${summary.message}`;
-  const detail =
-    `${summary.passCount} pass, ${summary.errorCount} error, ${summary.missingCount} missing, ${summary.excludedCount} excluded`;
+  const detail = `${summary.passCount} pass, ${summary.errorCount} error, ${summary.missingCount} missing, ${summary.excludedCount} excluded`;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${
-    escapeXml(title)
-  }">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="20" role="img" aria-label="${escapeXml(
+    title,
+  )}">
   <title>${escapeXml(`${title} (${detail})`)}</title>
   <linearGradient id="s" x2="0" y2="100%">
     <stop offset="0" stop-color="#ffffff" stop-opacity=".12"/>
@@ -102,9 +101,9 @@ export function renderDashboardStatusSvg(summary: DashboardStatusSummary): strin
   <g fill="#ffffff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
     <text x="${labelWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(summary.label)}</text>
     <text x="${labelWidth / 2}" y="14">${escapeXml(summary.label)}</text>
-    <text x="${labelWidth + messageWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${
-    escapeXml(summary.message)
-  }</text>
+    <text x="${labelWidth + messageWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(
+      summary.message,
+    )}</text>
     <text x="${labelWidth + messageWidth / 2}" y="14">${escapeXml(summary.message)}</text>
   </g>
 </svg>

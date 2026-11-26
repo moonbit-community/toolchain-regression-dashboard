@@ -147,7 +147,7 @@ Template variables are expanded in `argv` and `shell`:
 Regenerate the schema after changing `lib/toolchain_types.ts`:
 
 ```sh
-deno task schema
+npm run schema
 ```
 
 The generated file is `resources/submodules.schema.json`.

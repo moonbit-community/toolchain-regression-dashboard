@@ -18,10 +18,13 @@ export const DASHBOARD_BACKENDS = [
 export type Filter = 'all' | 'error' | 'excluded' | 'pass' | 'regression';
 export type CellStatus = 'pass' | 'error' | 'excluded' | 'missing';
 
-export type DataMap = Record<ToolchainOS, {
-  metadata: ToolchainMetadata | null;
-  results: ToolchainResultRecord[];
-}>;
+export type DataMap = Record<
+  ToolchainOS,
+  {
+    metadata: ToolchainMetadata | null;
+    results: ToolchainResultRecord[];
+  }
+>;
 
 export type DashboardData = {
   current: DataMap;
@@ -226,7 +229,11 @@ export function countRows(rows: RowData[]): Record<Filter, number> {
 }
 
 export function regressionRowKeys(data: DashboardData): Set<string> {
-  return new Set(buildRows(data).filter((row) => row.regressionCount > 0).map((row) => row.key));
+  return new Set(
+    buildRows(data)
+      .filter((row) => row.regressionCount > 0)
+      .map((row) => row.key),
+  );
 }
 
 export function hasRegression(data: DashboardData): boolean {

@@ -1,3 +1,4 @@
+import { mkdir, writeFile } from 'node:fs/promises';
 import { DASHBOARD_OSES, emptyDashboardData, regressionRowKeys, rowKey } from '../lib/dashboard_data.ts';
 import type { ToolchainOS, ToolchainResultRecord } from '../lib/toolchain_types.ts';
 
@@ -63,11 +64,12 @@ function publishedRegressionRowKeys(current: PublishedData, previous: PublishedD
 }
 
 async function copyLog(baseUrl: string, oldPath: string): Promise<string> {
+  oldPath = oldPath.replaceAll('\\', '/');
   const newPath = oldPath.replace('data/toolchain/current/', 'data/toolchain/previous/');
   const text = await fetchText(`${baseUrl}/${oldPath}`);
   if (text !== undefined) {
-    await Deno.mkdir(newPath.split('/').slice(0, -1).join('/'), { recursive: true });
-    await Deno.writeTextFile(newPath, text);
+    await mkdir(newPath.split('/').slice(0, -1).join('/'), { recursive: true });
+    await writeFile(newPath, text);
   }
   return newPath;
 }
@@ -98,7 +100,7 @@ async function restoreOs(
   }
 
   const previousPrefix = `data/toolchain/previous/${os}`;
-  await Deno.mkdir(previousPrefix, { recursive: true });
+  await mkdir(previousPrefix, { recursive: true });
   const restored = [JSON.stringify(metadata)];
   let advancedRecords = 0;
   let preservedRecords = 0;
@@ -114,11 +116,11 @@ async function restoreOs(
     preservedRecords += 1;
   }
 
-  await Deno.writeTextFile(`${previousPrefix}/data.jsonl`, `${restored.join('\n')}\n`);
+  await writeFile(`${previousPrefix}/data.jsonl`, `${restored.join('\n')}\n`);
   return { restored: true, advancedRecords, preservedRecords };
 }
 
-export async function main(args = Deno.args): Promise<void> {
+export async function main(args = process.argv.slice(2)): Promise<void> {
   const baseUrl = args[0] ? normalizeBaseUrl(args[0]) : '';
   if (!baseUrl) {
     console.log('No published Pages URL configured; previous data will be empty.');

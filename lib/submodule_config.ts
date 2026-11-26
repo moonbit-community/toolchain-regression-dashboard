@@ -1,4 +1,5 @@
-import * as yaml from '@std/yaml';
+import { readFile } from 'node:fs/promises';
+import * as yaml from 'yaml';
 import {
   CommandSpec,
   EffectiveCommandSpec,
@@ -35,11 +36,11 @@ export interface CommandTemplateContext {
 }
 
 export function getCurrentToolchainOS(): ToolchainOS {
-  if (Deno.build.os === 'linux' && Deno.build.arch === 'x86_64') return 'linux-x64';
-  if (Deno.build.os === 'windows' && Deno.build.arch === 'x86_64') return 'windows-x64';
-  if (Deno.build.os === 'darwin' && Deno.build.arch === 'aarch64') return 'macos-arm64';
+  if (process.platform === 'linux' && process.arch === 'x64') return 'linux-x64';
+  if (process.platform === 'win32' && process.arch === 'x64') return 'windows-x64';
+  if (process.platform === 'darwin' && process.arch === 'arm64') return 'macos-arm64';
 
-  throw new Error(`Unsupported toolchain regression OS/arch: ${Deno.build.os}/${Deno.build.arch}`);
+  throw new Error(`Unsupported toolchain regression OS/arch: ${process.platform}/${process.arch}`);
 }
 
 export function normalizeWorkspaceRelativePath(path: string | undefined, label = 'path'): string {
@@ -242,13 +243,15 @@ function getModuleConfigs(
     return submoduleConfig.modules;
   }
 
-  return [{
-    path: normalizeWorkspaceRelativePath(submoduleConfig.working_directory, 'working_directory'),
-  }];
+  return [
+    {
+      path: normalizeWorkspaceRelativePath(submoduleConfig.working_directory, 'working_directory'),
+    },
+  ];
 }
 
 export async function loadSubmodulesConfig(filePath: string): Promise<SubmodulesConfig> {
-  const content = await Deno.readTextFile(filePath);
+  const content = await readFile(filePath, 'utf8');
   const parsed = SubmodulesConfigSchema.parse(yaml.parse(content));
   const submodules: Record<string, SubmoduleConfig> = {};
 

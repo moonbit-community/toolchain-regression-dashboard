@@ -1,3 +1,4 @@
+import { test } from 'node:test';
 import {
   buildRows,
   countRows,
@@ -32,7 +33,7 @@ function record(
   };
 }
 
-Deno.test('isRegression only counts Pass to Error or Missing', () => {
+test('isRegression only counts Pass to Error or Missing', () => {
   assertEquals(isRegression('pass', 'error'), true);
   assertEquals(isRegression('pass', 'missing'), true);
   assertEquals(isRegression('error', 'error'), false);
@@ -41,7 +42,7 @@ Deno.test('isRegression only counts Pass to Error or Missing', () => {
   assertEquals(isRegression('pass', 'excluded'), false);
 });
 
-Deno.test('buildRows merges current and previous JSONL results and counts regressions', () => {
+test('buildRows merges current and previous JSONL results and counts regressions', () => {
   const data = emptyDashboardData();
   data.previous['linux-x64'].results = [
     record('deps/parser', '.', 'Pass'),
@@ -68,25 +69,28 @@ Deno.test('buildRows merges current and previous JSONL results and counts regres
   assertEquals(countRows(rows).regression, 2);
 });
 
-Deno.test('filterRows supports search, status filters, sorting, and regression filter', () => {
+test('filterRows supports search, status filters, sorting, and regression filter', () => {
   const data = emptyDashboardData();
-  data.previous['linux-x64'].results = [
-    record('deps/parser', '.', 'Pass'),
-    record('deps/stable', '.', 'Pass'),
-  ];
-  data.current['linux-x64'].results = [
-    record('deps/parser', '.', 'Error'),
-    record('deps/stable', '.', 'Pass'),
-  ];
+  data.previous['linux-x64'].results = [record('deps/parser', '.', 'Pass'), record('deps/stable', '.', 'Pass')];
+  data.current['linux-x64'].results = [record('deps/parser', '.', 'Error'), record('deps/stable', '.', 'Pass')];
   const rows = buildRows(data);
 
   assertEquals(rows[0].submodule_path, 'deps/parser');
-  assertEquals(filterRows(rows, 'regression', '').map((row) => row.submodule_path), ['deps/parser']);
-  assertEquals(filterRows(rows, 'pass', '').map((row) => row.submodule_path), []);
-  assertEquals(filterRows(rows, 'all', 'stable').map((row) => row.submodule_path), ['deps/stable']);
+  assertEquals(
+    filterRows(rows, 'regression', '').map((row) => row.submodule_path),
+    ['deps/parser'],
+  );
+  assertEquals(
+    filterRows(rows, 'pass', '').map((row) => row.submodule_path),
+    [],
+  );
+  assertEquals(
+    filterRows(rows, 'all', 'stable').map((row) => row.submodule_path),
+    ['deps/stable'],
+  );
 });
 
-Deno.test('hasRegression detects whether the published baseline should be preserved', () => {
+test('hasRegression detects whether the published baseline should be preserved', () => {
   const regressed = emptyDashboardData();
   regressed.previous['linux-x64'].results = [record('deps/parser', '.', 'Pass')];
   regressed.current['linux-x64'].results = [record('deps/parser', '.', 'Error')];

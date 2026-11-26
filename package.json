@@ -1,0 +1,37 @@
+{
+  "name": "toolchain-regression-dashboard",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.3.0"
+  },
+  "scripts": {
+    "stat": "node --import tsx main.ts stat",
+    "schema": "node --import tsx main.ts schema",
+    "restore-previous": "node --import tsx scripts/restore_previous.ts",
+    "status-badge": "node --import tsx scripts/write_status_badge.ts",
+    "bundle": "esbuild web.ts --bundle --format=esm --target=es2022 --outfile=web.js",
+    "dev": "npm run bundle -- --watch --servedir=.",
+    "check": "tsc --noEmit",
+    "test": "node --import tsx --test lib/*_test.ts scripts/*_test.ts",
+    "fmt": "prettier --write .",
+    "fmt:check": "prettier --check .",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "htm": "3.1.1",
+    "preact": "10.27.2",
+    "yaml": "^2.8.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

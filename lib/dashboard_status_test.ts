@@ -1,3 +1,4 @@
+import { test } from 'node:test';
 import { DASHBOARD_BACKENDS, DASHBOARD_OSES, emptyDashboardData } from './dashboard_data.ts';
 import { renderDashboardStatusSvg, summarizeDashboardStatus } from './dashboard_status.ts';
 import type { ToolchainBackend, ToolchainOS, ToolchainResultRecord } from './toolchain_types.ts';
@@ -38,7 +39,7 @@ function fillMatrix(status: ToolchainResultRecord['status']): ReturnType<typeof 
   return data;
 }
 
-Deno.test('summarizeDashboardStatus is passing when every current cell is Pass', () => {
+test('summarizeDashboardStatus is passing when every current cell is Pass', () => {
   const summary = summarizeDashboardStatus(fillMatrix('Pass'));
 
   assertEquals(summary.ok, true);
@@ -48,7 +49,7 @@ Deno.test('summarizeDashboardStatus is passing when every current cell is Pass',
   assertEquals(summary.missingCount, 0);
 });
 
-Deno.test('summarizeDashboardStatus treats Excluded as non-failing current cells', () => {
+test('summarizeDashboardStatus treats Excluded as non-failing current cells', () => {
   const data = fillMatrix('Pass');
   data.current['linux-x64'].results[0] = record('linux-x64', 'wasm', 'Excluded');
   const summary = summarizeDashboardStatus(data);
@@ -57,7 +58,7 @@ Deno.test('summarizeDashboardStatus treats Excluded as non-failing current cells
   assertEquals(summary.excludedCount, 1);
 });
 
-Deno.test('summarizeDashboardStatus is failing when any current cell is Error', () => {
+test('summarizeDashboardStatus is failing when any current cell is Error', () => {
   const data = fillMatrix('Pass');
   data.current['macos-arm64'].results[0] = record('macos-arm64', 'wasm', 'Error');
   const summary = summarizeDashboardStatus(data);
@@ -67,7 +68,7 @@ Deno.test('summarizeDashboardStatus is failing when any current cell is Error', 
   assertEquals(summary.errorCount, 1);
 });
 
-Deno.test('summarizeDashboardStatus is failing when a current cell is missing', () => {
+test('summarizeDashboardStatus is failing when a current cell is missing', () => {
   const data = fillMatrix('Pass');
   data.current['windows-x64'].results = data.current['windows-x64'].results.filter((item) => item.backend !== 'native');
   const summary = summarizeDashboardStatus(data);
@@ -76,7 +77,7 @@ Deno.test('summarizeDashboardStatus is failing when a current cell is missing', 
   assertEquals(summary.missingCount, 1);
 });
 
-Deno.test('renderDashboardStatusSvg uses green or red status colors', () => {
+test('renderDashboardStatusSvg uses green or red status colors', () => {
   assertIncludes(renderDashboardStatusSvg(summarizeDashboardStatus(fillMatrix('Pass'))), '#2ea44f');
   assertIncludes(renderDashboardStatusSvg(summarizeDashboardStatus(emptyDashboardData())), '#d73a49');
 });

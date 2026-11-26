@@ -34,28 +34,34 @@ jobs:
         with:
           submodules: true
 
-      - uses: denoland/setup-deno@v2
+      - uses: actions/setup-node@v4
         with:
-          deno-version: v2.x
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Validate Node.js migration
+        run: npm run check && npm run lint && npm test
 
       - name: Setup MSVC
         if: ${{ runner.os == 'Windows' }}
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Install MoonBit nightly on Unix
+      - name: Install MoonBit pre-release on Unix
         if: ${{ runner.os != 'Windows' }}
         shell: bash
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s nightly
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s pre-release
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
           "$HOME/.moon/bin/moon" version --all
           "$HOME/.moon/bin/moon" update
 
-      - name: Install MoonBit nightly on Windows
+      - name: Install MoonBit pre-release on Windows
         if: ${{ runner.os == 'Windows' }}
         shell: powershell
         env:
-          MOONBIT_INSTALL_VERSION: nightly
+          MOONBIT_INSTALL_VERSION: pre-release
         run: |
           Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
           irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
@@ -66,7 +72,7 @@ jobs:
       - name: Collect test data
         shell: bash
         run: |
-          deno run -A main.ts stat \
+          npm run stat -- \
             --config resources/submodules.yaml \
             --os ${{ matrix.os.id }} \
             --out-dir data/toolchain/current/${{ matrix.os.id }} \
@@ -86,9 +92,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: denoland/setup-deno@v2
+      - uses: actions/setup-node@v4
         with:
-          deno-version: v2.x
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
 
       - uses: actions/download-artifact@v4
         with:
@@ -98,7 +107,7 @@ jobs:
         env:
           PAGES_BASE_URL: ${{ vars.PAGES_BASE_URL }}
           DEFAULT_PAGES_BASE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
-        run: deno run -A scripts/restore_previous.ts "${PAGES_BASE_URL:-$DEFAULT_PAGES_BASE_URL}"
+        run: npm run restore-previous -- "${PAGES_BASE_URL:-$DEFAULT_PAGES_BASE_URL}"
 
       - name: Organize current data
         run: |
@@ -108,10 +117,10 @@ jobs:
           cp -r artifacts/toolchain-current-windows-x64/* data/toolchain/current/windows-x64/
 
       - name: Write dashboard status badge
-        run: deno task status-badge
+        run: npm run status-badge
 
       - name: Bundle web
-        run: deno task bundle
+        run: npm run bundle
 
       - name: Prepare publish directory
         run: |

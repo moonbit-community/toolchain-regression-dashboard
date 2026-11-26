@@ -1,14 +1,15 @@
-import { parseArgs } from '@std/cli/parse-args';
-import { join } from '@std/path/join';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { parseArgs } from 'node:util';
+import { join } from 'node:path';
 import z from 'zod';
 import { toolchainStat, writeToolchainJsonl } from './lib/toolchain_stat.ts';
 import { SubmodulesConfigSchema, ToolchainOS, ToolchainOSSchema } from './lib/toolchain_types.ts';
 
 type Cli =
   | {
-    subcommand: 'stat';
-    options: { config?: string; outDir?: string; os?: ToolchainOS; maxConcurrentSubmodules?: number };
-  }
+      subcommand: 'stat';
+      options: { config?: string; outDir?: string; os?: ToolchainOS; maxConcurrentSubmodules?: number };
+    }
   | { subcommand: 'schema' };
 
 function showHelp() {
@@ -16,7 +17,7 @@ function showHelp() {
 Toolchain Regression Dashboard
 
 USAGE:
-    deno run -A main.ts <SUBCOMMAND> [OPTIONS]
+    node --import tsx main.ts <SUBCOMMAND> [OPTIONS]
 
 SUBCOMMANDS:
     stat             Run MoonBit test collection from resources/submodules.yaml
@@ -32,7 +33,7 @@ function showStatHelp() {
 Run toolchain regression collection
 
 USAGE:
-    deno run -A main.ts stat [OPTIONS]
+    node --import tsx main.ts stat [OPTIONS]
 
 OPTIONS:
     --config <PATH>                         Path to submodules.yaml [default: resources/submodules.yaml]
@@ -53,15 +54,20 @@ function parseToolchainOs(value: unknown): ToolchainOS | undefined {
 }
 
 function parseStatArgs(args: string[]): Cli {
-  const parsed = parseArgs(args, {
-    string: ['config', 'out-dir', 'os', 'max-concurrent-submodules'],
-    boolean: ['help'],
-    alias: { h: 'help' },
+  const { values: parsed } = parseArgs({
+    args,
+    options: {
+      config: { type: 'string' },
+      'out-dir': { type: 'string' },
+      os: { type: 'string' },
+      'max-concurrent-submodules': { type: 'string' },
+      help: { type: 'boolean', short: 'h' },
+    },
   });
 
   if (parsed.help) {
     showStatHelp();
-    Deno.exit(0);
+    process.exit(0);
   }
 
   return {
@@ -78,19 +84,12 @@ function parseStatArgs(args: string[]): Cli {
 }
 
 function parseCli(args: string[]): Cli {
-  const parsed = parseArgs(args, {
-    boolean: ['help'],
-    alias: { h: 'help' },
-    stopEarly: true,
-  });
-
-  if (parsed.help) {
+  if (args[0] === '--help' || args[0] === '-h') {
     showHelp();
-    Deno.exit(0);
+    process.exit(0);
   }
 
-  const subcommand = parsed._[0]?.toString();
-  const rest = parsed._.slice(1).map(String);
+  const [subcommand, ...rest] = args;
   switch (subcommand) {
     case 'stat':
       return parseStatArgs(rest);
@@ -102,7 +101,7 @@ function parseCli(args: string[]): Cli {
 }
 
 try {
-  const cli = parseCli(Deno.args);
+  const cli = parseCli(process.argv.slice(2));
 
   if (cli.subcommand === 'stat') {
     const dashboard = await toolchainStat(cli.options);
@@ -110,8 +109,8 @@ try {
     await writeToolchainJsonl(path, dashboard.metadata, dashboard.result);
     console.log(`Wrote ${dashboard.result.length} toolchain records to ${path}`);
   } else if (cli.subcommand === 'schema') {
-    await Deno.mkdir('resources', { recursive: true });
-    await Deno.writeTextFile(
+    await mkdir('resources', { recursive: true });
+    await writeFile(
       'resources/submodules.schema.json',
       `${JSON.stringify(z.toJSONSchema(SubmodulesConfigSchema), null, 2)}\n`,
     );
@@ -119,5 +118,5 @@ try {
   }
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
-  Deno.exit(1);
+  process.exit(1);
 }

@@ -1,6 +1,8 @@
-import { JsonStringifyStream } from '@std/json';
-import { dirname } from '@std/path/dirname';
-import { join } from '@std/path/join';
+import { appendFile, mkdir, open, writeFile, stat } from 'node:fs/promises';
+import { execFile, spawn } from 'node:child_process';
+import { promisify } from 'node:util';
+import { dirname } from 'node:path';
+import { join } from 'node:path';
 import {
   expandCommand,
   expandSubmodulesConfig,
@@ -56,24 +58,13 @@ function isResourceIntensiveGroup(tasks: ToolchainTask[]): boolean {
 }
 
 async function runGit(args: string[], cwd: string): Promise<string> {
-  const process = new Deno.Command('git', {
-    args,
-    cwd,
-    stdout: 'piped',
-    stderr: 'piped',
-  });
-  const { code, stdout, stderr } = await process.output();
-  const stdoutText = new TextDecoder().decode(stdout).trim();
-  if (code !== 0) {
-    const stderrText = new TextDecoder().decode(stderr).trim();
-    throw new Error(`git ${args.join(' ')} failed with exit code ${code}${stderrText ? `: ${stderrText}` : ''}`);
-  }
-  return stdoutText;
+  const { stdout } = await promisify(execFile)('git', args, { cwd });
+  return stdout.trim();
 }
 
 async function readSubmoduleCommit(submoduleDir: string): Promise<string> {
-  const stat = await Deno.stat(submoduleDir).catch(() => undefined);
-  if (!stat?.isDirectory) {
+  const info = await stat(submoduleDir).catch(() => undefined);
+  if (!info?.isDirectory()) {
     throw new Error(`Submodule path does not exist or is not a directory: ${submoduleDir}`);
   }
   return await runGit(['rev-parse', 'HEAD'], submoduleDir);
@@ -83,17 +74,12 @@ export async function makeLogPaths(
   dataDir: string,
   task: ToolchainTask,
 ): Promise<{ stdout_path: string; stderr_path: string }> {
-  await Deno.mkdir(join(dataDir, 'logs'), { recursive: true });
-  const hash = await sha256Hex([
-    task.submodule_path,
-    task.module_path,
-    task.os,
-    task.backend,
-  ].join('|'));
+  await mkdir(join(dataDir, 'logs'), { recursive: true });
+  const hash = await sha256Hex([task.submodule_path, task.module_path, task.os, task.backend].join('|'));
   const prefix = hash.slice(0, 16);
   return {
-    stdout_path: join(dataDir, 'logs', `${prefix}.stdout.log`),
-    stderr_path: join(dataDir, 'logs', `${prefix}.stderr.log`),
+    stdout_path: join(dataDir, 'logs', `${prefix}.stdout.log`).replaceAll('\\', '/'),
+    stderr_path: join(dataDir, 'logs', `${prefix}.stderr.log`).replaceAll('\\', '/'),
   };
 }
 
@@ -133,13 +119,13 @@ async function writeFailureLog(
   message: string,
 ): Promise<{ stdout_path: string; stderr_path: string }> {
   const paths = await makeLogPaths(dataDir, task);
-  await Deno.writeTextFile(paths.stdout_path, '');
-  await Deno.writeTextFile(paths.stderr_path, message);
+  await writeFile(paths.stdout_path, '');
+  await writeFile(paths.stderr_path, message);
   return paths;
 }
 
 function shellCommandArgs(shell: string): { command: string; args: string[] } {
-  if (Deno.build.os === 'windows') {
+  if (process.platform === 'win32') {
     return { command: 'cmd', args: ['/d', '/s', '/c', shell] };
   }
 
@@ -155,54 +141,70 @@ async function runExpandedCommand(
   stderrPath: string,
 ): Promise<ProcessResult> {
   const started = performance.now();
-  const signal = new AbortController();
   let timedOut = false;
-  const timeout = setTimeout(() => {
-    timedOut = true;
-    signal.abort();
-  }, timeoutSeconds * 1000);
-
+  let timeout: ReturnType<typeof setTimeout> | undefined;
   const command = Array.isArray(expandedCommand)
     ? { command: expandedCommand[0], args: expandedCommand.slice(1) }
     : shellCommandArgs(expandedCommand);
 
   try {
-    using stdoutFile = await Deno.open(stdoutPath, { create: true, write: true, truncate: true });
-    using stderrFile = await Deno.open(stderrPath, { create: true, write: true, truncate: true });
-    const process = new Deno.Command(command.command, {
-      args: command.args,
-      cwd,
-      env: { ...MOON_ENV, ...env },
-      signal: signal.signal,
-      stdout: 'piped',
-      stderr: 'piped',
-    });
-    const child = process.spawn();
-    const stdoutTask = child.stdout.pipeTo(stdoutFile.writable);
-    const stderrTask = child.stderr.pipeTo(stderrFile.writable);
-
+    const stdoutFile = await open(stdoutPath, 'w');
     try {
-      const status = await child.status;
-      await Promise.all([stdoutTask, stderrTask]);
-      return {
-        success: status.success,
-        exit_code: status.code,
-        elapsed: Math.round((performance.now() - started) / 10) / 100,
-      };
-    } catch (error) {
-      await Promise.allSettled([stdoutTask, stderrTask]);
-      return {
-        success: false,
-        elapsed: Math.round((performance.now() - started) / 10) / 100,
-        reason: timedOut ? `Command timed out after ${timeoutSeconds} seconds.` : String(error),
-      };
+      const stderrFile = await open(stderrPath, 'w');
+      try {
+        // Write directly to files so large compiler logs never fill an in-memory buffer.
+        const child = spawn(command.command, command.args, {
+          cwd,
+          env: { ...process.env, ...MOON_ENV, ...env },
+          stdio: ['ignore', stdoutFile.fd, stderrFile.fd],
+          detached: process.platform !== 'win32',
+          windowsHide: true,
+        });
+        const status = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve, reject) => {
+          child.once('error', reject);
+          child.once('close', (code, signal) => resolve({ code, signal }));
+        });
+        timeout = setTimeout(() => {
+          timedOut = true;
+          if (!child.pid) return;
+          if (process.platform === 'win32') {
+            // Terminate the compiler and its children, including shell commands.
+            execFile('taskkill', ['/pid', String(child.pid), '/t', '/f'], (error) => {
+              if (error) child.kill('SIGKILL');
+            });
+          } else {
+            try {
+              process.kill(-child.pid, 'SIGKILL');
+            } catch {
+              child.kill('SIGKILL');
+            }
+          }
+        }, timeoutSeconds * 1000);
+        const { code, signal } = await status;
+        return {
+          success: !timedOut && code === 0,
+          exit_code: code ?? undefined,
+          elapsed: Math.round((performance.now() - started) / 10) / 100,
+          reason: timedOut
+            ? `Command timed out after ${timeoutSeconds} seconds.`
+            : signal
+              ? `Command terminated by ${signal}.`
+              : undefined,
+        };
+      } finally {
+        clearTimeout(timeout);
+        await stderrFile.close();
+      }
+    } finally {
+      await stdoutFile.close();
     }
   } catch (error) {
-    await Deno.writeTextFile(stderrPath, error instanceof Error ? error.message : String(error)).catch(() => {});
+    const message = error instanceof Error ? error.message : String(error);
+    await appendFile(stderrPath, message).catch(() => undefined);
     return {
       success: false,
       elapsed: Math.round((performance.now() - started) / 10) / 100,
-      reason: timedOut ? `Command timed out after ${timeoutSeconds} seconds.` : String(error),
+      reason: timedOut ? `Command timed out after ${timeoutSeconds} seconds.` : message,
     };
   } finally {
     clearTimeout(timeout);
@@ -317,14 +319,15 @@ export async function toolchainStat(
 ): Promise<{ metadata: ToolchainMetadata; result: ToolchainResultRecord[]; os: ToolchainOS; outDir: string }> {
   const os = options.os ?? getCurrentToolchainOS();
   const outDir = options.outDir ?? `data/toolchain/current/${os}`;
-  const workspaceRoot = options.workspaceRoot ?? Deno.cwd();
+  const workspaceRoot = options.workspaceRoot ?? process.cwd();
   const config = await loadSubmodulesConfig(options.config ?? 'resources/submodules.yaml');
   const tasks = expandSubmodulesConfig(config, os, { includeExcluded: true });
   const executableTasks = tasks.filter((task) => !task.excluded);
   const excludedResult = tasks.filter((task) => task.excluded).map(excludedRecord);
   const groups = groupTasksBySubmodule(executableTasks);
-  const maxConcurrentSubmodules = options.maxConcurrentSubmodules ??
-    parseInt(Deno.env.get('MAX_CONCURRENT_SUBMODULES') ?? String(DEFAULT_MAX_CONCURRENT_SUBMODULES), 10);
+  const maxConcurrentSubmodules =
+    options.maxConcurrentSubmodules ??
+    parseInt(process.env.MAX_CONCURRENT_SUBMODULES ?? String(DEFAULT_MAX_CONCURRENT_SUBMODULES), 10);
 
   const groupedResults = await executeWithExclusiveConcurrency(
     groups.map((group) => ({
@@ -338,8 +341,8 @@ export async function toolchainStat(
     os,
     outDir,
     metadata: {
-      runId: Deno.env.get('GITHUB_ACTION_RUN_ID') || '0',
-      runNumber: Deno.env.get('GITHUB_ACTION_RUN_NUMBER') || '0',
+      runId: process.env.GITHUB_ACTION_RUN_ID || '0',
+      runNumber: process.env.GITHUB_ACTION_RUN_NUMBER || '0',
       generated_at: new Date().toISOString(),
       toolchainVersion: await readToolchainVersion(),
     },
@@ -352,14 +355,6 @@ export async function writeToolchainJsonl(
   metadata: ToolchainMetadata,
   records: ToolchainResultRecord[],
 ): Promise<void> {
-  await Deno.mkdir(dirname(path), { recursive: true });
-  using file = await Deno.open(path, {
-    create: true,
-    write: true,
-    truncate: true,
-  });
-  await ReadableStream.from([metadata, ...records])
-    .pipeThrough(new JsonStringifyStream())
-    .pipeThrough(new TextEncoderStream())
-    .pipeTo(file.writable);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, [metadata, ...records].map((value) => JSON.stringify(value)).join('\n') + '\n');
 }

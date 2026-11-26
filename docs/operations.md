@@ -4,14 +4,16 @@ This guide covers day-to-day operation of Toolchain Regression Dashboard.
 
 ## Local Checks
 
+Use Node.js 24.3 or newer and run `npm ci` before the commands below.
+
 ```sh
-deno task fmt
-deno task lint
-deno task check
-deno task test
-deno task schema
-deno task status-badge
-deno task bundle
+npm run fmt
+npm run lint
+npm run check
+npm run test
+npm run schema
+npm run status-badge
+npm run bundle
 ```
 
 ## Local Collection
@@ -19,7 +21,7 @@ deno task bundle
 Run collection for one OS:
 
 ```sh
-deno run -A main.ts stat \
+npm run stat -- \
   --config resources/submodules.yaml \
   --os linux-x64 \
   --out-dir data/toolchain/current/linux-x64
@@ -39,10 +41,11 @@ The collector does not initialize or update submodules. Ensure the configured pa
 
 The collect job:
 
-1. Checks out the repository with `submodules: recursive`.
-2. Installs the nightly MoonBit toolchain.
-3. Runs `main.ts stat` for one OS.
-4. Uploads `data/toolchain/current/<os>` as an artifact.
+1. Checks out the repository with `submodules: true`.
+2. Sets up Node.js 24, installs npm dependencies, and runs type checks, lint, and tests.
+3. Installs the pre-release MoonBit toolchain.
+4. Runs `npm run stat --` for one OS.
+5. Uploads `data/toolchain/current/<os>` as an artifact.
 
 The publish job:
 

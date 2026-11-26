@@ -23,7 +23,7 @@ outside the dashboard.
 Validate and refresh the JSON schema after changing config types:
 
 ```sh
-deno task schema
+npm run schema
 ```
 
 ## Collect Data
@@ -31,7 +31,7 @@ deno task schema
 Run the collector for the current host OS or an explicit OS id:
 
 ```sh
-deno run -A main.ts stat --config resources/submodules.yaml --os linux-x64
+npm run stat -- --config resources/submodules.yaml --os linux-x64
 ```
 
 Output is written to `data/toolchain/current/<os>/data.jsonl`; logs are written under
@@ -42,13 +42,13 @@ Output is written to `data/toolchain/current/<os>/data.jsonl`; logs are written 
 Build the static frontend:
 
 ```sh
-deno task bundle
+npm run bundle
 ```
 
 Generate the README status badge from current data:
 
 ```sh
-deno task status-badge
+npm run status-badge
 ```
 
 The published badge is written to `data/toolchain/status.svg`. It is green when every current dashboard cell is `Pass`
@@ -79,12 +79,14 @@ Each file is newline-delimited JSON. The first line is metadata with `generated_
 
 ## Development
 
+Use Node.js 24.3 or newer (`nvm use` selects Node.js 24), then install dependencies with `npm ci`.
+
 ```sh
-deno task fmt
-deno task lint
-deno task check
-deno task test
-deno task schema
-deno task status-badge
-deno task bundle
+npm run fmt
+npm run lint
+npm run check
+npm run test
+npm run schema
+npm run status-badge
+npm run bundle
 ```

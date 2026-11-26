@@ -1,3 +1,6 @@
 data/
 web.js
 .codex
+node_modules/
+publish/
+artifacts/

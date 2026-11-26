@@ -1,3 +1,4 @@
+import { test } from 'node:test';
 import { executeWithExclusiveConcurrency } from './utils.ts';
 
 function assertEquals(actual: unknown, expected: unknown) {
@@ -10,7 +11,7 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-Deno.test('executeWithExclusiveConcurrency runs exclusive tasks without overlap', async () => {
+test('executeWithExclusiveConcurrency runs exclusive tasks without overlap', async () => {
   const active = new Set<string>();
   const exclusiveNames = new Set(['heavy-a', 'heavy-b']);
   const starts: string[] = [];
@@ -41,13 +42,16 @@ Deno.test('executeWithExclusiveConcurrency runs exclusive tasks without overlap'
     };
   }
 
-  const results = await executeWithExclusiveConcurrency([
-    makeTask('normal-a', 20),
-    makeTask('normal-b', 20),
-    makeTask('heavy-a', 5),
-    makeTask('normal-c', 5),
-    makeTask('heavy-b', 5),
-  ], 3);
+  const results = await executeWithExclusiveConcurrency(
+    [
+      makeTask('normal-a', 20),
+      makeTask('normal-b', 20),
+      makeTask('heavy-a', 5),
+      makeTask('normal-c', 5),
+      makeTask('heavy-b', 5),
+    ],
+    3,
+  );
 
   assertEquals(results, ['normal-a', 'normal-b', 'heavy-a', 'normal-c', 'heavy-b']);
   assertEquals(starts, ['normal-a', 'normal-b', 'heavy-a', 'normal-c', 'heavy-b']);
