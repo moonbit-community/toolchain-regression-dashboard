@@ -59,4 +59,6 @@ submodules:
         - os: windows-x64
   mooncakes/moonbit-community/xml-mbt: {}
   mooncakes/moonbit-community/moonbit-jq: {}
-  mooncakes/moonbit-community/cmark.mbt: {}
+  mooncakes/moonbit-community/cmark.mbt:
+    test:
+      working_directory: cmark
